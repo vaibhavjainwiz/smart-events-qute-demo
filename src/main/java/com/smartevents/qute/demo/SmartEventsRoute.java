@@ -17,13 +17,16 @@
 package com.smartevents.qute.demo;
 
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.qute.QuteConstants;
 
 public class SmartEventsRoute extends RouteBuilder {
     @Override
     public void configure() throws Exception {
 
         from("kafka:inbound")
-                .to("qute:hello")
+                .setHeader(QuteConstants.QUTE_TEMPLATE)
+                    .constant("My World {body}")
+                .to("qute:hello?allowTemplateFromHeader=true")
                 .to("kafka:outbound");
     }
 }
