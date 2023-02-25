@@ -18,14 +18,20 @@ package com.smartevents.qute.demo;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.qute.QuteConstants;
+import org.apache.camel.model.dataformat.JsonLibrary;
+
+import java.util.Map;
 
 public class SmartEventsRoute extends RouteBuilder {
     @Override
     public void configure() throws Exception {
 
         from("kafka:inbound")
+                .unmarshal().json(JsonLibrary.Jackson, Map.class)
                 .setHeader(QuteConstants.QUTE_TEMPLATE)
-                    .constant("My World {body}")
+                    .constant("{#if body.data.context.display_name??}\n" +
+                            "<{body.data.environment_url}{#if body.data.bundle == \"openshift\" and body.data.application == \"advisor\"}/openshift/insights/advisor/clusters/{body.data.context.display_name}{#else}/insights/inventory/{#if body.data.context.inventory_id??}{body.data.context.inventory_id}{#else}?hostname_or_id={body.data.context.display_name}{/if}{/if}|{body.data.context.display_name}> triggered {body.data.events.size()} event{#if body.data.events.size() > 1}s{/if}{#else}\n" +
+                            "{body.data.events.size()} event{#if body.data.events.size() > 1}s{/if} triggered{/if} from {body.data.bundle}/{body.data.application}. <{body.data.environment_url}/{#if body.data.bundle == \"application-services\" and body.data.application == \"rhosak\"}application-services/streams{#else}{#if body.data.bundle == \"openshift\"}openshift/{/if}insights/{body.data.application}{/if}|Open {body.data.application}>")
                 .to("qute:hello?allowTemplateFromHeader=true")
                 .to("kafka:outbound");
     }
